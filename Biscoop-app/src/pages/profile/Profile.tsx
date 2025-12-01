@@ -11,9 +11,11 @@ export interface ProfileProps {
 }
 
 interface ExtendedProfile {
-  username: string;
   bio: string;
   genre: string;
+  avatarColor: string;
+  avatarEmoji: string;
+  lastUpdated: string;
 }
 
 const Profile: React.FC<ProfileProps> = ({ user, movies, onLogout }) => {
@@ -25,16 +27,19 @@ const Profile: React.FC<ProfileProps> = ({ user, movies, onLogout }) => {
     email: user.email,
   });
   const [extendedProfile, setExtendedProfile] = useState<ExtendedProfile>({
-    username: '',
     bio: '',
-    genre: ''
+    genre: '',
+    avatarColor: '#7c3aed',
+    avatarEmoji: '👤',
+    lastUpdated: ''
   });
+  const [avatarImage, setAvatarImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // Always reload from database when component mounts or location changes
+    // Always reload when component mounts or location changes
     loadProfile();
-  }, [location]); // Re-load when returning from edit-profile
+  }, [location.pathname]); // Re-load when returning from edit-profile
 
   const loadProfile = async () => {
     const userId = getCurrentUserId();
@@ -46,7 +51,7 @@ const Profile: React.FC<ProfileProps> = ({ user, movies, onLogout }) => {
 
     try {
       setLoading(true);
-      // ALWAYS load from database - this is the source of truth
+      // Load from database (source of truth for core data)
       const profile = await getUserProfile(userId);
       console.log('✅ Profile loaded from database:', profile);
       
@@ -56,19 +61,31 @@ const Profile: React.FC<ProfileProps> = ({ user, movies, onLogout }) => {
         email: profile.email,
       });
 
-      // Load extended profile data from localStorage (bio, genre)
+      // Load extended profile data from localStorage (bio, genre, avatar)
       const savedProfile = localStorage.getItem('userProfile');
       if (savedProfile) {
         try {
           const profileData = JSON.parse(savedProfile);
+          console.log('✅ Extended profile loaded from localStorage:', profileData);
           setExtendedProfile({
-            username: profileData.username || '',
             bio: profileData.bio || '',
-            genre: profileData.genre || ''
+            genre: profileData.genre || '',
+            avatarColor: profileData.avatarColor || '#7c3aed',
+            avatarEmoji: profileData.avatarEmoji || '👤',
+            lastUpdated: profileData.lastUpdated || ''
           });
         } catch (error) {
-          console.error('Error loading extended profile:', error);
+          console.error('Error parsing extended profile:', error);
         }
+      }
+
+      // Load avatar image from localStorage
+      const savedAvatar = localStorage.getItem('userAvatar');
+      if (savedAvatar) {
+        console.log('✅ Avatar image loaded from localStorage');
+        setAvatarImage(savedAvatar);
+      } else {
+        setAvatarImage(null);
       }
     } catch (error) {
       console.error('❌ Error loading profile from database:', error);
@@ -79,13 +96,21 @@ const Profile: React.FC<ProfileProps> = ({ user, movies, onLogout }) => {
         try {
           const profileData = JSON.parse(savedProfile);
           setExtendedProfile({
-            username: profileData.username || '',
             bio: profileData.bio || '',
-            genre: profileData.genre || ''
+            genre: profileData.genre || '',
+            avatarColor: profileData.avatarColor || '#7c3aed',
+            avatarEmoji: profileData.avatarEmoji || '👤',
+            lastUpdated: profileData.lastUpdated || ''
           });
         } catch (error) {
           console.error('Error loading from localStorage:', error);
         }
+      }
+
+      // Load avatar fallback
+      const savedAvatar = localStorage.getItem('userAvatar');
+      if (savedAvatar) {
+        setAvatarImage(savedAvatar);
       }
       
       // Use context as absolute fallback
@@ -113,11 +138,26 @@ const Profile: React.FC<ProfileProps> = ({ user, movies, onLogout }) => {
     navigate('/login');
   };
 
+  // Create avatar style based on whether we have an image or use color/emoji
+  const avatarStyle = avatarImage 
+    ? { 
+        backgroundImage: `url(${avatarImage})`, 
+        backgroundSize: 'cover', 
+        backgroundPosition: 'center',
+        fontSize: '0' // Hide emoji when showing image
+      }
+    : { 
+        backgroundColor: extendedProfile.avatarColor,
+        fontSize: '3rem'
+      };
+
   if (loading) {
     return (
       <div className="profile-container">
         <div className="profile-card">
-          <p style={{ textAlign: 'center', color: '#9ab0c9' }}>Loading profile from database...</p>
+          <p style={{ textAlign: 'center', color: '#9ab0c9', padding: '2rem' }}>
+            Loading profile...
+          </p>
         </div>
       </div>
     );
@@ -129,16 +169,17 @@ const Profile: React.FC<ProfileProps> = ({ user, movies, onLogout }) => {
         <div className="profile-header"></div>
         
         <div className="profile-info">
-          <div className="profile-avatar">
-            👤
+          <div 
+            className="profile-avatar"
+            style={avatarStyle}
+            title={avatarImage ? "Custom Avatar" : `${extendedProfile.avatarEmoji} - ${extendedProfile.avatarColor}`}
+          >
+            {!avatarImage && extendedProfile.avatarEmoji}
           </div>
           <div className="profile-name">{displayName}</div>
-          {extendedProfile.username && (
-            <div className="profile-username">@{extendedProfile.username}</div>
-          )}
           <div className="profile-email">{profileData.email}</div>
           {extendedProfile.bio && (
-            <div className="profile-bio">{extendedProfile.bio}</div>
+            <div className="profile-bio">"{extendedProfile.bio}"</div>
           )}
           {extendedProfile.genre && (
             <div className="profile-genre">

@@ -193,6 +193,7 @@ const EditProfile: React.FC = () => {
         email: formData.email,
         password: formData.password
       });
+      console.log('✅ Core profile saved to database:', updatedProfile);
 
       const fullName = `${updatedProfile.firstName} ${updatedProfile.lastName}`;
       setUser({
@@ -209,9 +210,15 @@ const EditProfile: React.FC = () => {
         lastUpdated: new Date().toISOString()
       };
       localStorage.setItem('userProfile', JSON.stringify(profileData));
+      console.log('✅ Extended profile saved to localStorage:', profileData);
 
       if (avatarImage) {
         localStorage.setItem('userAvatar', avatarImage);
+        console.log('✅ Avatar image saved to localStorage');
+      } else {
+        // If no avatar image, make sure it's removed
+        localStorage.removeItem('userAvatar');
+        console.log('✅ Avatar image removed from localStorage');
       }
 
       const registeredUser = localStorage.getItem('registeredUser');
@@ -230,7 +237,8 @@ const EditProfile: React.FC = () => {
       setHasUnsavedChanges(false);
       
       setTimeout(() => {
-        navigate('/profile');
+        console.log('✅ Navigating to profile page with replace=true to force reload');
+        navigate('/profile', { replace: true });
       }, 1500);
     } catch (error) {
       console.error('Save error:', error);
