@@ -13,6 +13,12 @@ interface ExtendedUserData {
   genre: string;
   avatarColor: string;
   avatarEmoji: string;
+  phoneNumber: string;
+  countryCode: string;
+  dateOfBirth: string;
+  gender: string;
+  city: string;
+  country: string;
 }
 
 const AVATAR_COLORS = [
@@ -28,6 +34,32 @@ const AVATAR_COLORS = [
 
 const AVATAR_EMOJIS = ['👤', '😊', '🎬', '🎭', '🎪', '🎨', '🎵', '🎮', '🌟', '🚀', '🎯', '💫'];
 
+const COUNTRY_CODES = [
+  { code: '+31', country: 'NL', flag: '🇳🇱' },
+  { code: '+1', country: 'US', flag: '🇺🇸' },
+  { code: '+44', country: 'UK', flag: '🇬🇧' },
+  { code: '+49', country: 'DE', flag: '🇩🇪' },
+  { code: '+33', country: 'FR', flag: '🇫🇷' },
+  { code: '+34', country: 'ES', flag: '🇪🇸' },
+  { code: '+39', country: 'IT', flag: '🇮🇹' },
+  { code: '+32', country: 'BE', flag: '🇧🇪' },
+  { code: '+86', country: 'CN', flag: '🇨🇳' },
+  { code: '+81', country: 'JP', flag: '🇯🇵' },
+  { code: '+91', country: 'IN', flag: '🇮🇳' },
+  { code: '+7', country: 'RU', flag: '🇷🇺' },
+];
+
+const COUNTRIES = [
+  'Netherlands', 'United States', 'United Kingdom', 'Germany', 
+  'France', 'Spain', 'Italy', 'Belgium', 'China', 'Japan', 
+  'India', 'Russia', 'Canada', 'Australia', 'Brazil', 'Mexico'
+];
+
+const CITIES_NL = [
+  'Amsterdam', 'Rotterdam', 'The Hague', 'Utrecht', 'Eindhoven', 
+  'Groningen', 'Tilburg', 'Almere', 'Breda', 'Nijmegen', 'Schiedam'
+];
+
 const EditProfile: React.FC = () => {
   const navigate = useNavigate();
   const { user, setUser } = useUserContext();
@@ -41,7 +73,13 @@ const EditProfile: React.FC = () => {
     bio: '',
     genre: '',
     avatarColor: '#7c3aed',
-    avatarEmoji: '👤'
+    avatarEmoji: '👤',
+    phoneNumber: '',
+    countryCode: '+31',
+    dateOfBirth: '',
+    gender: '',
+    city: '',
+    country: 'Netherlands'
   });
 
   const [avatarImage, setAvatarImage] = useState<string | null>(null);
@@ -51,6 +89,21 @@ const EditProfile: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Age calculation helper
+  const calculateAge = (dateOfBirth: string): number | null => {
+    if (!dateOfBirth) return null;
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const age = calculateAge(formData.dateOfBirth);
 
   useEffect(() => {
     loadUserProfile();
@@ -72,7 +125,18 @@ const EditProfile: React.FC = () => {
       const profile = await getUserProfile(userId);
       
       const savedProfile = localStorage.getItem('userProfile');
-      let extendedData = { bio: '', genre: '', avatarColor: '#7c3aed', avatarEmoji: '👤' };
+      let extendedData = { 
+        bio: '', 
+        genre: '', 
+        avatarColor: '#7c3aed', 
+        avatarEmoji: '👤',
+        phoneNumber: '',
+        countryCode: '+31',
+        dateOfBirth: '',
+        gender: '',
+        city: '',
+        country: 'Netherlands'
+      };
       
       if (savedProfile) {
         try {
@@ -81,7 +145,13 @@ const EditProfile: React.FC = () => {
             bio: profileData.bio || '',
             genre: profileData.genre || '',
             avatarColor: profileData.avatarColor || '#7c3aed',
-            avatarEmoji: profileData.avatarEmoji || '👤'
+            avatarEmoji: profileData.avatarEmoji || '👤',
+            phoneNumber: profileData.phoneNumber || '',
+            countryCode: profileData.countryCode || '+31',
+            dateOfBirth: profileData.dateOfBirth || '',
+            gender: profileData.gender || '',
+            city: profileData.city || '',
+            country: profileData.country || 'Netherlands'
           };
         } catch (e) {
           console.error('Error loading extended profile:', e);
@@ -112,7 +182,13 @@ const EditProfile: React.FC = () => {
         bio: extendedData.bio,
         genre: extendedData.genre,
         avatarColor: extendedData.avatarColor,
-        avatarEmoji: extendedData.avatarEmoji
+        avatarEmoji: extendedData.avatarEmoji,
+        phoneNumber: extendedData.phoneNumber,
+        countryCode: extendedData.countryCode,
+        dateOfBirth: extendedData.dateOfBirth,
+        gender: extendedData.gender,
+        city: extendedData.city,
+        country: extendedData.country
       });
       
       setHasUnsavedChanges(false);
@@ -207,6 +283,12 @@ const EditProfile: React.FC = () => {
         genre: formData.genre,
         avatarColor: formData.avatarColor,
         avatarEmoji: formData.avatarEmoji,
+        phoneNumber: formData.phoneNumber,
+        countryCode: formData.countryCode,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        city: formData.city,
+        country: formData.country,
         lastUpdated: new Date().toISOString()
       };
       localStorage.setItem('userProfile', JSON.stringify(profileData));
@@ -470,6 +552,123 @@ const EditProfile: React.FC = () => {
             <option value="scifi">Science Fiction</option>
             <option value="thriller">Thriller</option>
           </select>
+        </div>
+
+        {/* Phone Number with Country Code */}
+        <div className="form-group">
+          <label className="form-label">Phone Number</label>
+          <div className="phone-input-group">
+            <select
+              value={formData.countryCode}
+              onChange={(e) => updateField('countryCode', e.target.value)}
+              className="country-code-select"
+            >
+              {COUNTRY_CODES.map((item) => (
+                <option key={item.code} value={item.code}>
+                  {item.flag} {item.code}
+                </option>
+              ))}
+            </select>
+            <input
+              type="tel"
+              value={formData.phoneNumber}
+              onChange={(e) => updateField('phoneNumber', e.target.value.replace(/[^0-9]/g, ''))}
+              className="form-input phone-input"
+              placeholder="612345678"
+              maxLength={15}
+            />
+          </div>
+          {formData.phoneNumber && formData.countryCode && (
+            <div className="phone-preview">
+              📱 {formData.countryCode} {formData.phoneNumber}
+            </div>
+          )}
+        </div>
+
+        {/* Date of Birth with Age Calculator */}
+        <div className="form-group">
+          <label className="form-label">
+            Date of Birth
+            {age !== null && (
+              <span className="age-indicator"> (Age: {age} years)</span>
+            )}
+          </label>
+          <input
+            type="date"
+            value={formData.dateOfBirth}
+            onChange={(e) => updateField('dateOfBirth', e.target.value)}
+            className="form-input"
+            max={new Date().toISOString().split('T')[0]}
+          />
+          {age !== null && (
+            <div className="age-category">
+              {age < 13 && '👶 Child'}
+              {age >= 13 && age < 18 && '🧒 Teen'}
+              {age >= 18 && age < 65 && '👤 Adult'}
+              {age >= 65 && '👴 Senior'}
+            </div>
+          )}
+        </div>
+
+        {/* Gender */}
+        <div className="form-group">
+          <label className="form-label">Gender (Optional)</label>
+          <select
+            value={formData.gender}
+            onChange={(e) => updateField('gender', e.target.value)}
+            className="form-select"
+          >
+            <option value="">Prefer not to say</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="non-binary">Non-binary</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        {/* Location - Country & City */}
+        <div className="form-group">
+          <label className="form-label">Country</label>
+          <select
+            value={formData.country}
+            onChange={(e) => {
+              updateField('country', e.target.value);
+              updateField('city', ''); // Reset city when country changes
+            }}
+            className="form-select"
+          >
+            {COUNTRIES.map((country) => (
+              <option key={country} value={country}>
+                {country}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">City</label>
+          {formData.country === 'Netherlands' ? (
+            <select
+              value={formData.city}
+              onChange={(e) => updateField('city', e.target.value)}
+              className="form-select"
+            >
+              <option value="">Select a city</option>
+              {CITIES_NL.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={formData.city}
+              onChange={(e) => updateField('city', e.target.value)}
+              className="form-input"
+              placeholder="Enter your city"
+            />
+          )}
         </div>
 
         <div className="button-grid">

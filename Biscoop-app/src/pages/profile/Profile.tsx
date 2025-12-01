@@ -16,6 +16,12 @@ interface ExtendedProfile {
   avatarColor: string;
   avatarEmoji: string;
   lastUpdated: string;
+  phoneNumber?: string;
+  countryCode?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  city?: string;
+  country?: string;
 }
 
 const Profile: React.FC<ProfileProps> = ({ user, movies, onLogout }) => {
@@ -31,7 +37,13 @@ const Profile: React.FC<ProfileProps> = ({ user, movies, onLogout }) => {
     genre: '',
     avatarColor: '#7c3aed',
     avatarEmoji: '👤',
-    lastUpdated: ''
+    lastUpdated: '',
+    phoneNumber: '',
+    countryCode: '+31',
+    dateOfBirth: '',
+    gender: '',
+    city: '',
+    country: 'Netherlands'
   });
   const [avatarImage, setAvatarImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,7 +84,13 @@ const Profile: React.FC<ProfileProps> = ({ user, movies, onLogout }) => {
             genre: profileData.genre || '',
             avatarColor: profileData.avatarColor || '#7c3aed',
             avatarEmoji: profileData.avatarEmoji || '👤',
-            lastUpdated: profileData.lastUpdated || ''
+            lastUpdated: profileData.lastUpdated || '',
+            phoneNumber: profileData.phoneNumber || '',
+            countryCode: profileData.countryCode || '+31',
+            dateOfBirth: profileData.dateOfBirth || '',
+            gender: profileData.gender || '',
+            city: profileData.city || '',
+            country: profileData.country || 'Netherlands'
           });
         } catch (error) {
           console.error('Error parsing extended profile:', error);
@@ -126,11 +144,20 @@ const Profile: React.FC<ProfileProps> = ({ user, movies, onLogout }) => {
 
   const displayName = `${profileData.firstName} ${profileData.lastName}`.trim() || user.name;
   
+  // Calculate dynamic stats
+  const totalMovies = movies.length;
+  const reviewCount = movies.filter(movie => movie.rating).length; // Movies with ratings
+  const favoriteGenres = movies.reduce((acc, movie) => {
+    acc[movie.genre] = (acc[movie.genre] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const topGenreCount = Math.max(...Object.values(favoriteGenres), 0);
+  
   const stats = [
-    { value: movies.length, label: 'Movies Watched' },
-    { value: user.points, label: 'Points Earned' },
-    { value: 8, label: 'Reviews Written' },
-    { value: 3, label: 'Favorites' }
+    { value: totalMovies, label: 'Movies Watched', icon: '🎬' },
+    { value: user.points, label: 'Points Earned', icon: '⭐' },
+    { value: reviewCount, label: 'Reviews Written', icon: '✍️' },
+    { value: topGenreCount, label: 'Top Genre Views', icon: '❤️' }
   ];
 
   const handleLogout = () => {
@@ -186,14 +213,65 @@ const Profile: React.FC<ProfileProps> = ({ user, movies, onLogout }) => {
               ❤️ Favorite Genre: {extendedProfile.genre.charAt(0).toUpperCase() + extendedProfile.genre.slice(1)}
             </div>
           )}
+          {extendedProfile.phoneNumber && extendedProfile.countryCode && (
+            <div className="profile-detail">
+              📱 {extendedProfile.countryCode} {extendedProfile.phoneNumber}
+            </div>
+          )}
+          {extendedProfile.dateOfBirth && (
+            <div className="profile-detail">
+              🎂 {new Date(extendedProfile.dateOfBirth).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+              {(() => {
+                const today = new Date();
+                const birthDate = new Date(extendedProfile.dateOfBirth);
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                  age--;
+                }
+                return ` (${age} years old)`;
+              })()}
+            </div>
+          )}
+          {extendedProfile.gender && (
+            <div className="profile-detail">
+              {extendedProfile.gender === 'male' && '👨 Male'}
+              {extendedProfile.gender === 'female' && '👩 Female'}
+              {extendedProfile.gender === 'non-binary' && '🧑 Non-binary'}
+              {extendedProfile.gender === 'other' && '👤 Other'}
+            </div>
+          )}
+          {(extendedProfile.city || extendedProfile.country) && (
+            <div className="profile-detail">
+              📍 {extendedProfile.city && `${extendedProfile.city}, `}{extendedProfile.country}
+            </div>
+          )}
+        </div>
+
+        <div className="profile-badges">
           <div className="profile-badge">
             ⭐ Premium Member
           </div>
+          {movies.length >= 10 && (
+            <div className="profile-badge badge-gold">
+              🎬 Movie Buff
+            </div>
+          )}
+          {user.points >= 100 && (
+            <div className="profile-badge badge-blue">
+              💎 Top Reviewer
+            </div>
+          )}
         </div>
 
         <div className="stats-grid">
           {stats.map((stat, i) => (
             <div key={i} className="stat-card">
+              <div className="stat-icon">{stat.icon}</div>
               <span className="stat-value">{stat.value}</span>
               <div className="stat-label">{stat.label}</div>
             </div>
